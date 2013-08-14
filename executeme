@@ -1,0 +1,51 @@
+#!/bin/bash
+
+echo "MALE Webcrawler SSL v2.0" >&2
+echo "USO: ./executeme <url> <profundidade>" >&2
+echo "A lista de links e salva em saida.txt" >&2
+echo "Download dos arquivos e feito na pasta padrao do usuario" >&2
+echo "~/male_webcrawler_ssl/" >&2
+echo "" >&2
+argumentos=0;
+if [ "$#" == 0 ]; then
+      echo "" >&2
+      echo "Ajuda" >&2
+      echo "Repositorio GIT: https://github.com/mariosaldanha/trabalho_redes_ssl" >&2
+      echo "" >&2
+      echo "-h : esta ajuda" >&2
+      echo "-c : compila binario" >&2
+      echo "-i : instala bibliotecas necessarias para compilacao" >&2
+else
+while getopts ":hci" opt; do
+  case $opt in
+    h)
+      echo "" >&2
+      echo "Ajuda" >&2
+      echo "MALE Webcrawler v1.0" >&2
+      echo "Repositorio GIT: https://github.com/mariosaldanha/trabalho_redes_ssl" >&2
+      echo "" >&2
+      echo "-h : esta ajuda" >&2
+      echo "-c : compila binario" >&2
+      echo "-i : instala bibliotecas necessarias para compilacao" >&2
+      ;;
+    c)
+      echo "Compilar webcrawler" >&2
+      make
+      ;;
+    i)
+      echo "Instalar bibliotecas necessarias pra compilacao" >&2
+      sudo apt-get install libboost-regex-dev      
+      ;;
+    \?)
+      echo "Opcao invalida: -$OPTARG" >&2
+      ;;
+  esac
+argumentos=1;
+done
+if [ $# = 2 ]; then
+	if [ $argumentos = 0 ]; then
+		./webcrawler $1 $2 > saida.txt
+	fi
+fi
+
+fi
