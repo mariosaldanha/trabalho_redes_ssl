@@ -119,7 +119,8 @@ void connect_ssl(SSL_CTX *ctx,int *socket_desc){
 		ERR_print_errors_fp(stderr);
 		SSL_free(ssl);
 		SSL_CTX_free(ctx);
-		exit(1);
+		return;
+		//exit(1);
 	}
 }
 
@@ -155,7 +156,7 @@ string owner_ssl(){
         list<string> issuer;
         regex_split(back_inserter(issuer), line, e);
         
-        boost::regex e("CN=",
+        boost::regex e("O=",
 				   boost::regbase::normal | boost::regbase::icase);  
         
         string subjectCN;
@@ -179,7 +180,7 @@ string owner_ssl(){
 		// se for proprio dono
 		if(subjectCN == issuerCN){
 			//cout << issuerCN << " *" << endl;
-			return issuerCN + " ******"; 
+			return issuerCN + " AUTO-ASSINADO"; 
 		}
 		else{
 			//cout << subjectCN << endl;
@@ -531,6 +532,7 @@ void FazTudo(string url, int depth) {
 	//intranet-corporativa-200x200.jpg
 	create_dir(host_test, path_test);
 	socket_desc = create_socket();
+	//cout << domain << "   " << path << endl;
 	socket_address(&server, host_test);
 
 	if ((int)server.sin_addr.s_addr == -1)
@@ -544,26 +546,28 @@ void FazTudo(string url, int depth) {
 		ctx = create_ctx();
 		
 		// Carrega os ceritificados de confiança
-		 if(! SSL_CTX_load_verify_locations(ctx, "/etc/ssl/certs/ca-certificates.crt", NULL)){
+		 if(! SSL_CTX_load_verify_locations(ctx, "ca-certificates.crt", NULL)){
 			fprintf(stderr, "Error loading trust store\n");
 			ERR_print_errors_fp(stderr);
 			SSL_CTX_free(ctx);
-			exit(1);
+			//exit(1);
+			return;
 		}
 		
 		// Criando a conexão ssl
 		connect_ssl(ctx, &socket_desc);
-
+	
 		// Verifica o certificado
 	    if(SSL_get_verify_result(ssl) != X509_V_OK)
 	    {
 	        fprintf(stderr, "Certificate verification error: %ld\n", SSL_get_verify_result(ssl));
 	        SSL_free(ssl);
 	        SSL_CTX_free(ctx);
-	        exit(1);
+	        //exit(1);
+	        return;
 	    }
 	}
-	
+
 	std::vector<string> lista = receive_data(&socket_desc, host_test, path_test);
 	string aux;
 	for (int i=0; i < (int) lista.size();i++) {
@@ -581,12 +585,13 @@ void FazTudo(string url, int depth) {
 			if(boost::regex_search(new_url, secure)){
 				//new_url = new_url + " " + owner_ssl();
 				aux = new_url + " " + owner_ssl();
-				cout << "SECURE " << new_url  << endl;
+				//cout << "SECURE " << new_url  << endl;
 			}
 			else{
 				aux = new_url;
-				cout << "NOTSECURE " << new_url  << endl;
+				//cout << "NOTSECURE " << new_url  << endl;
 			}
+			cout << aux << endl;
 			lista_urls_visitadas.push_back(new_url);
 			lista_urls_final.push_back(aux);
 			
@@ -607,8 +612,19 @@ void FazTudo(string url, int depth) {
 	}
 	if(https){
 		// Termina conexão ssl
-		SSL_free(ssl);        	// ssl
-		SSL_CTX_free(ctx);      // contexto
+		if(ssl != NULL){
+			//cout << "ssl free" << endl;
+			SSL_free(ssl);        	// ssl
+			ssl = NULL;
+			//cout << "ssl free apos" << endl;
+		}
+		if(ctx != NULL){
+			//cout << "ctx free" << endl;
+			SSL_CTX_free(ctx);      // contexto
+			ctx = NULL;
+			//cout << "ctx free apos" << endl;
+		}
+		
 	}
 	if((shutdown(socket_desc, 2)) < 0){
 		std::cerr << "Erro ao fechar o socket" << endl;
@@ -618,7 +634,7 @@ void FazTudo(string url, int depth) {
 int main(int argc , char *argv[]) {
 	string url;
 	int depth;
-
+	//cout <<"argv " <<  argv[1] << endl;
 	if(argc != 3){
 		std::cerr << "parametros invalidos" << endl;
 		return 0;
@@ -630,11 +646,11 @@ int main(int argc , char *argv[]) {
 	SSL_load_error_strings();
 	
 	url += argv[1];
-	std::cerr << url << endl;
+	//std::cerr << url << endl;
 	depth = atoi (argv[2]);
 
    	FazTudo(url, depth);
-
+   	
 	std::cout << "Lista URL visitadas:" << std::endl;
 	for (int i = 0; i < (int)lista_urls_final.size(); i++) {
 		std::cout << lista_urls_final[i] << std::endl;

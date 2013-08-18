@@ -44,7 +44,7 @@ argumentos=1;
 done
 if [ $# = 2 ]; then
 	if [ $argumentos = 0 ]; then
-		./webcrawler $1 $2 > saida.txt
+		./testeme $1 $2
 	fi
 fi
 
