@@ -1,11 +1,10 @@
 MALE Webcrawler:
 
-Grupo:
+Grupo: Mário Saldanha Ccomp
 
+Repositorio GIT: https://github.com/mariosaldanha/trabalho_redes_ssl
 
-Repositorio GIT:
-
-Implementações:
+Instruções:
 
 	o script executeme possui instrucoes de uso:
 		./executeme <url> <profundidade>
@@ -14,7 +13,20 @@ Implementações:
       -h : chama ajuda
       -c : compila binario
       -i : instala bibliotecas necessarias para compilacao
+
+Bibliotecas: boost_regex, libssl-dev
+
+Implementação:
+	O webcrawler do trabalho anterior foi atualizado permitindo conexão com HTTPS, usando Openssl
+	A conexão segura é estabelecida quando é encontrado "https" no link por exemplo https://www.google.com.br
+	Após estabelecer a conexão é procurado o dono do certificado e verificado o certificado é auto-assinado 
+	Caso seja uma conexão com HTTP é feita a conexão normalmente.
       
 Testes:
-
+	https://sites.google.com/a/inf.ufpel.edu.br/pilla/home/redes-de-computadores
+	https://www.google.com/
+	https://webmail.ufpel.edu.br/
+	
+	A página do webmail da ufpel possui um certificado auto-assinado, portanto ele é destacado
+	na saída padrão do webcrawler
 

@@ -21,7 +21,7 @@ while getopts ":hci" opt; do
     h)
       echo "" >&2
       echo "Ajuda" >&2
-      echo "MALE Webcrawler v1.0" >&2
+      echo "MALE Webcrawler v2.0" >&2
       echo "Repositorio GIT: https://github.com/mariosaldanha/trabalho_redes_ssl" >&2
       echo "" >&2
       echo "-h : esta ajuda" >&2
@@ -34,7 +34,8 @@ while getopts ":hci" opt; do
       ;;
     i)
       echo "Instalar bibliotecas necessarias pra compilacao" >&2
-      sudo apt-get install libboost-regex-dev      
+      sudo apt-get install libboost-regex-dev
+      sudo apt-get install libssl-dev      
       ;;
     \?)
       echo "Opcao invalida: -$OPTARG" >&2

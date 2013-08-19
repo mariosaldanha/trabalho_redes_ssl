@@ -14,6 +14,7 @@ static string host_atual, path_atual;
 // SSL
 static std::vector<string> lista_urls_final;
 static bool https;
+static bool first;
 static int PORT;
 SSL *ssl;
 
@@ -159,32 +160,32 @@ string owner_ssl(){
         boost::regex e("O=",
 				   boost::regbase::normal | boost::regbase::icase);  
         
-        string subjectCN;
+        string subjectO;
         // Verifica nome do dono
         for(i = subject.begin(); i != subject.end(); ++i){
 			if(boost::regex_search(*i, e)){
-				subjectCN = *i;
+				subjectO = *i;
 				break;
 			}
 		}
 		
-		string issuerCN;
+		string issuerO;
         // Verifica nome do emissor
         for(i = issuer.begin(); i != issuer.end(); ++i){
 			if(boost::regex_search(*i, e)){
-				issuerCN = *i;
+				issuerO = *i;
 				break;
 			}
 		}
 		//cout << "subjectCN: " << subjectCN << " issuerCN: " << issuerCN << endl;
 		// se for proprio dono
-		if(subjectCN == issuerCN){
+		if(subjectO == issuerO){
 			//cout << issuerCN << " *" << endl;
-			return issuerCN + " AUTO-ASSINADO"; 
+			return issuerO + " AUTO-ASSINADO"; 
 		}
 		else{
 			//cout << subjectCN << endl;
-			return subjectCN; 
+			return subjectO; 
 		}
         X509_free(certificado);
 	}
@@ -202,21 +203,11 @@ std::vector<string> receive_data(int *socket, char *host, char *path){
 	message = build_request(host, path);
 
 	//std::ofstream imagem("/home/andref/Downloads/teste_webcrawler.html", ios::out | ios::binary);
-	/** fullpath eh setado no create_dir()
-	string url = path;
-
-
-	//std::cerr << fullpath << std::endl;
-	**/
 	vector<string> str_split;
 
 	boost::split_regex(str_split, fullpath,boost::regex("/"));
 	string filename = str_split[str_split.size()-1] == "" ? "index.html" : str_split[str_split.size()-1];
-	//std::cerr << "filename: " <<filename << std::endl;
-	//fullpath += filename;
-	//std::cerr << "fullpath " << fullpath << endl;
 	std::ofstream saida(fullpath.c_str(), ios::out);
-	//std::cerr << "Salvando arquivo: " << fullpath << endl;
 	
 	// verifica envio http ou https
 	if(https){
@@ -261,15 +252,7 @@ std::vector<string> receive_data(int *socket, char *host, char *path){
 			} else {
 				ponteiro = 0;
 				content = server_reply;
-				//puts(content);
 			}
-			//std::cerr << "Tamanho: " << tam << "content: " << sizeof(content)* strlen(content) << std::endl;
-	
-			//std::cerr << "server_reply: " << strlen(server_reply) << std::endl;;
-			//std::cerr << "content: " << strlen(content) << std::endl;;
-			//printf("Ponteiros: server_reply: %p content: %p \n",server_reply, content);
-			//fwrite(content,tam,1,pFile);
-			//std::cerr << content << std::endl;
 			saida.write(content,tam-ponteiro);
 	
 			memset(server_reply,0,tam);
@@ -292,25 +275,13 @@ std::vector<string> receive_data(int *socket, char *host, char *path){
 			} else {
 				ponteiro = 0;
 				content = server_reply;
-				//puts(content);
 			}
-			//std::cerr << "Tamanho: " << tam << "content: " << sizeof(content)* strlen(content) << std::endl;
-	
-			//std::cerr << "server_reply: " << strlen(server_reply) << std::endl;;
-			//std::cerr << "content: " << strlen(content) << std::endl;;
-			//printf("Ponteiros: server_reply: %p content: %p \n",server_reply, content);
-			//fwrite(content,tam,1,pFile);
-			//std::cerr << content << std::endl;
 			saida.write(content,tam-ponteiro);
 	
 			memset(server_reply,0,tam);
 			totalTam2 = totalTam2 + tam;
 		}
 	}
-
-	//std::cerr << "TotalTam: " << totalTam << std::endl;
-	//std::cerr << "Cabecalho: " << std::endl << header << std::endl;
-	//std::cerr << "Imagem: " << str.length() << std::endl << str << std::endl;
 
 	/** Printando a resposta que acumulou do recv
 	 *  para confirmar que pegou todo conteudo da resposta do http
@@ -342,6 +313,7 @@ std::vector<string> receive_data(int *socket, char *host, char *path){
 			temp.clear();
 			resposta = *(l.begin());
 			l.pop_front();
+			//cout << "resposta " << resposta << endl;
 			// Teste para verificar se no <a href> contem mailto: ou javascript:
 			if(!(boost::regex_search(resposta, invalid))){
 				if (!resposta.empty()){
@@ -456,7 +428,7 @@ void create_dir(char *host, char *path){
 					//}
 					//std::cerr <<"TEMP " << temp << endl;
 					if((status = mkdir(temp.c_str(), 0777)) < 0){
-						std::cerr << "Erro ao criar o diretorio " << temp << endl;
+						//std::cerr << "Erro ao criar o diretorio " << temp << endl;
 					}
 					chmod(temp.c_str(), 0777);
 				}
@@ -475,7 +447,7 @@ void FazTudo(string url, int depth) {
 	//std::cerr << "URL:" << url << std::endl;
 	//boost::regex expr("^(?:http://)?([^/]+)(?:/?.*/?)/(.*)$");
 	vector<string> str_split;
-
+	//cout << "url " << url << endl;
 	boost::split_regex(str_split, url,boost::regex("/"));
 	string domain;
 	string path = "/";
@@ -539,8 +511,9 @@ void FazTudo(string url, int depth) {
 		return;
 
 	socket_connect(&socket_desc, &server);
-	
+	string dono;
 	SSL_CTX *ctx;
+	string aux;
 	if(https){
 		 // Seta a conexão segura
 		ctx = create_ctx();
@@ -556,20 +529,41 @@ void FazTudo(string url, int depth) {
 		
 		// Criando a conexão ssl
 		connect_ssl(ctx, &socket_desc);
-	
+		
+		dono = owner_ssl();
+		
+		boost::regex autoassinado("AUTO-ASSINADO",
+				   boost::regbase::normal | boost::regbase::icase);  
+		
 		// Verifica o certificado
 	    if(SSL_get_verify_result(ssl) != X509_V_OK)
 	    {
-	        fprintf(stderr, "Certificate verification error: %ld\n", SSL_get_verify_result(ssl));
-	        SSL_free(ssl);
-	        SSL_CTX_free(ctx);
-	        //exit(1);
-	        return;
+	        //fprintf(stderr, "Certificate verification error: %ld\n", SSL_get_verify_result(ssl));
+	        if(!(boost::regex_search(dono, autoassinado))){
+				SSL_free(ssl);
+				SSL_CTX_free(ctx);
+				//exit(1);
+				return;
+			}
+			else{
+				if(first){
+					aux = url + "\t" + dono;
+					lista_urls_visitadas.push_back(url);
+					lista_urls_final.push_back(aux);
+					cout << aux << endl;
+				}
+				printf("Certificado inválido\n");
+			}
 	    }
 	}
-
+	else if(first){
+		aux = url;
+		lista_urls_visitadas.push_back(url);
+		lista_urls_final.push_back(aux);
+		cout << aux << endl;
+	}
+	first = false;
 	std::vector<string> lista = receive_data(&socket_desc, host_test, path_test);
-	string aux;
 	for (int i=0; i < (int) lista.size();i++) {
 		new_url = lista[i];
 		//std::cerr << "Verificando: " << new_url;
@@ -584,7 +578,7 @@ void FazTudo(string url, int depth) {
 		if (!existe) {
 			if(boost::regex_search(new_url, secure)){
 				//new_url = new_url + " " + owner_ssl();
-				aux = new_url + " " + owner_ssl();
+				aux = new_url + "\t" + dono;
 				//cout << "SECURE " << new_url  << endl;
 			}
 			else{
@@ -648,13 +642,13 @@ int main(int argc , char *argv[]) {
 	url += argv[1];
 	//std::cerr << url << endl;
 	depth = atoi (argv[2]);
-
+	first = true;
    	FazTudo(url, depth);
    	
-	std::cout << "Lista URL visitadas:" << std::endl;
-	for (int i = 0; i < (int)lista_urls_final.size(); i++) {
-		std::cout << lista_urls_final[i] << std::endl;
-	}
+	//std::cout << "Lista URL visitadas:" << std::endl;
+	//for (int i = 0; i < (int)lista_urls_final.size(); i++) {
+	//	std::cout << lista_urls_final[i] << std::endl;
+	//}
 
 	return 0;
 }
