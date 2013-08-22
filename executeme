@@ -1,9 +1,9 @@
 #!/bin/bash
 
-echo "MALE Webcrawler SSL v2.0" >&2
+echo "Webcrawler SSL v2.0" >&2
 echo "USO: ./executeme <url> <profundidade>" >&2
 echo "OU : ./testeme <url> <profundidade>" >&2
-echo "Download dos arquivos na pasta male_webcrawler/" >&2
+echo "Download dos arquivos na pasta saida_webcrawler/" >&2
 argumentos=0;
 if [ "$#" == 0 ]; then
       echo "" >&2
@@ -20,7 +20,7 @@ while getopts ":hci" opt; do
     h)
       echo "" >&2
       echo "Ajuda" >&2
-      echo "MALE Webcrawler v2.0" >&2
+      echo "Webcrawler v2.0" >&2
       echo "Repositorio GIT: https://github.com/mariosaldanha/trabalho_redes_ssl" >&2
       echo "-h : esta ajuda" >&2
       echo "-c : compila binario" >&2
@@ -33,8 +33,8 @@ while getopts ":hci" opt; do
       ;;
     i)
       echo "Instalar bibliotecas necessarias pra compilacao" >&2
+	  sudo apt-get install libssl-dev 
       sudo apt-get install libboost-regex-dev
-      sudo apt-get install libssl-dev      
       ;;
     \?)
       echo "Opcao invalida: -$OPTARG" >&2

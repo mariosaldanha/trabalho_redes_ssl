@@ -1,15 +1,18 @@
-MALE Webcrawler:
+Webcrawler:
 
 Grupo: Mário Saldanha Ccomp
 
 EXEMPLO DE USO: ./executeme -c									(compila)
-				./testeme https://webmail.ufpel.edu.br 1		(executa)
+				./testeme https://cobalto.ufpel.edu.br/ 1		(executa)
 				make clean										(limpa os arquivos de saida)
 
 Instruções:
 
 	o script executeme possui instrucoes de uso:
 		./executeme <url> <profundidade>
+		
+	pode utilizar o executável também:
+		./testeme <url> <profundidade>
 		
 	alem de outros argumentos para facilitar a compilacao e instalacao de bibliotecas necessarias
       -h : chama ajuda
@@ -21,7 +24,9 @@ Bibliotecas: boost_regex, libssl-dev
 Implementação:
 	O webcrawler do trabalho anterior foi atualizado permitindo conexão com HTTPS, usando Openssl
 	A conexão segura é estabelecida quando é encontrado "https" no link por exemplo https://www.google.com.br
-	Após estabelecer a conexão é procurado o dono do certificado e verificado se o certificado é auto-assinado 
+	O socket da conexão tcp é envolvido em uma conexão segura.
+	Após estabelecer a conexão é o certificado é validado e ocorre a busca do dono do certificado e a verificação 
+	se o certificado é auto-assinado.
 	Caso seja uma conexão com HTTP é feita a conexão normalmente.
       
 Testes:
@@ -30,8 +35,7 @@ Testes:
 	https://webmail.ufpel.edu.br/
 	https://cobalto.ufpel.edu.br/
 	
-	A página do webmail da ufpel possui um certificado auto-assinado, portanto ele é destacado
-	na saída padrão do webcrawler. Do mesmo modo que o site do cobalto
+	Certificados auto-assinados são destacados na saída padrão do webcrawler.
 	
 Repositorio GIT: https://github.com/mariosaldanha/trabalho_redes_ssl
 

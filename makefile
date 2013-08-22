@@ -24,7 +24,7 @@ http: lib_webcrawler.h lib_webcrawler.cpp
 
 clean:
 	rm -rf $(EXECUTAVEL)
-	rm -rf male_webcrawler
+	rm -rf saida_webcrawler
 
 package:
 	@echo "Empacotando: "

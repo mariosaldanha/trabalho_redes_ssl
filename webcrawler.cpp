@@ -99,9 +99,7 @@ void send_request(int *socket, char *get) {
 SSL_CTX *create_ctx(){   
 	SSL_METHOD *method;
     SSL_CTX *ctx;
- 
-    OpenSSL_add_all_algorithms(); 
-    //SSL_load_error_strings();   
+
     method = (SSL_METHOD*)SSLv23_client_method();
     if (!(ctx = SSL_CTX_new(method)))
     {
@@ -121,7 +119,6 @@ void connect_ssl(SSL_CTX *ctx,int *socket_desc){
 		SSL_free(ssl);
 		SSL_CTX_free(ctx);
 		return;
-		//exit(1);
 	}
 }
 
@@ -181,7 +178,6 @@ string owner_ssl(){
 			}
 		}
 		
-		
 		// Se não tiver organização procura por CN
 		if(subjectO.empty() || issuerO.empty()){
 			//cout << "sem organização" << endl;
@@ -206,7 +202,7 @@ string owner_ssl(){
 		// se for proprio dono
 		if(subjectO == issuerO){
 			//cout << issuerCN << " *" << endl;
-			return subjectO + " [AUTO-ASSINADO]"; 
+			return subjectO + "\t[AUTO-ASSINADO]"; 
 		}
 		else{
 			//cout << subjectCN << endl;
@@ -224,10 +220,7 @@ std::vector<string> receive_data(int *socket, char *host, char *path){
 	char server_reply[BUFSIZ];
    	char *message;
 
-   	//message = "GET /img_turismo_oqueconhecer/03.jpg HTTP/1.1\r\nHost: ausentesonline.com.br\r\n\r\n";
 	message = build_request(host, path);
-
-	//std::ofstream imagem("/home/andref/Downloads/teste_webcrawler.html", ios::out | ios::binary);
 	vector<string> str_split;
 
 	boost::split_regex(str_split, fullpath,boost::regex("/"));
@@ -317,7 +310,6 @@ std::vector<string> receive_data(int *socket, char *host, char *path){
 	std::size_t found = headerStr.find("text/html");
 	if (found != std::string::npos) {
 
-		//boost::regex e("<\\s*A\\s+[^>]*href\\s*=\\s*\"([^\"]*)\"|<img.+?src=[\"'](.+?)[\"'].+?>",
 		boost::regex e("<\\s*A\\s+[^>]*href\\s*=\\s*\"([^\"]*)\"",
 				   boost::regbase::normal | boost::regbase::icase);
 
@@ -386,21 +378,12 @@ std::vector<string> receive_data(int *socket, char *host, char *path){
 
 void create_dir(char *host, char *path){
 	int status;
-
-	// Pega o diretorio padrao do user
-	//struct passwd *pw = getpwuid(getuid());
-	//char *homedir = pw->pw_dir;
-
 	string diretorio;
 	string host_dir = host;
 	string path_dir = path;
-
-	// /home/user
-	//diretorio += homedir;
-	// /home/user/
 	struct stat fileStat;
 
-	diretorio += "male_webcrawler/";
+	diretorio += "saida_webcrawler/";
 	if (stat(diretorio.c_str(),&fileStat) < 0) {
 		if((status = mkdir(diretorio.c_str(), 0777)) < 0){
 			std::cerr << "Erro ao criar o diretorio " << diretorio << endl;
@@ -409,11 +392,6 @@ void create_dir(char *host, char *path){
 	}
 	diretorio += host_dir;
 	diretorio += "/";
-
-	/**boost::regex test("/");
-	if(boost::regex_search(path, test)){
-		diretorio += "/";
-	}**/
 
 	if (stat(diretorio.c_str(),&fileStat) < 0) {
 		if((status = mkdir(diretorio.c_str(), 0777)) < 0){
@@ -447,11 +425,6 @@ void create_dir(char *host, char *path){
 					temp += str_split[i] + "/";
 				}
 				if (stat(temp.c_str(),&fileStat) < 0) {
-					//std::cerr << "temp: " << temp << endl;
-					//if(temp[temp.size()-1] == '/'){
-					//	temp[temp.size()-1] = '\0';
-					//}
-					//std::cerr <<"TEMP " << temp << endl;
 					if((status = mkdir(temp.c_str(), 0777)) < 0){
 						//std::cerr << "Erro ao criar o diretorio " << temp << endl;
 					}
@@ -499,8 +472,6 @@ void FazTudo(string url, int depth) {
 	} else {	// link relativo
 		domain = host_atual;
 		path = path_atual + str_split[0];
-		//std::cerr << "LINK RELATIVO ARRUMADO " << domain << path << endl;
-		//domain = str_split[0];
 	}
 
 	char * host_test = (char *)domain.c_str();
@@ -546,14 +517,6 @@ void FazTudo(string url, int depth) {
 		// Verifica o certificado
 	    if(SSL_get_verify_result(ssl) != X509_V_OK)
 	    {
-	        //fprintf(stderr, "Certificate verification error: %ld\n", SSL_get_verify_result(ssl));
-	        //if(!(boost::regex_search(dono, autoassinado))){
-				//SSL_free(ssl);
-				//SSL_CTX_free(ctx);
-				//exit(1);
-				//return;
-			//}
-			//else{
 			if(first){
 				aux = url + "\n\t\t<" + dono + ">";
 				lista_urls_visitadas.push_back(url);
@@ -561,7 +524,6 @@ void FazTudo(string url, int depth) {
 				cout << aux << endl;
 			}
 			printf("\t\t\tCertificado não confiável\n");
-			//}
 	    }
 	}
 	else if(first){
@@ -585,26 +547,18 @@ void FazTudo(string url, int depth) {
 		}
 		if (!existe && depth >= 0) {
 			if(boost::regex_search(new_url, secure)){
-				//new_url = new_url + " " + owner_ssl();
 				aux = new_url + "\n\t\t<" + dono + ">";
 				//cout << "SECURE " << new_url  << endl;
 			}
 			else{
 				aux = new_url;
-				//cout << "NOTSECURE " << new_url  << endl;
 			}
 			cout << aux << endl;
 			lista_urls_visitadas.push_back(new_url);
 			lista_urls_final.push_back(aux);
 			
-			//std::cerr << "Profundidade:" << depth << std::endl;
-			//host_atual.clear();
 			host_atual = domain;
-			//path.clear();
 			path_atual = path;
-			//std::cerr << "host_atual " <<  host_atual << endl;
-			//std::cerr << "path_atual " <<  path_atual << endl;
-			//std::cerr << " ... acessando profundidade: " << depth << endl;
 			if (depth >= 0) {
 				FazTudo(new_url,depth-1);
 			}
@@ -630,7 +584,7 @@ void FazTudo(string url, int depth) {
 int main(int argc , char *argv[]) {
 	string url;
 	int depth;
-	//cout <<"argv " <<  argv[1] << endl;
+	
 	if(argc != 3){
 		std::cerr << "parametros invalidos" << endl;
 		return 0;
@@ -642,7 +596,7 @@ int main(int argc , char *argv[]) {
 	SSL_load_error_strings();
 	
 	url += argv[1];
-	//std::cerr << url << endl;
+
 	depth = atoi (argv[2]);
 	first = true;
    	FazTudo(url, depth);
