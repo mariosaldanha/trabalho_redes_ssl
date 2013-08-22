@@ -4,7 +4,7 @@
 CC=g++
 
 # Objects
-OBJETOS=http.o webcrawler.o
+OBJETOS=lib_webcrawler.o webcrawler.o
 
 # Compilador flags - Warning, debug, boost,  SSL
 CPPFLAGS=-std=c++0x -Wall -g -lm -lboost_regex -lssl -lcrypto
@@ -16,14 +16,15 @@ all: $(OBJETOS)
 	$(CC) $(OBJETOS) $(CPPFLAGS) -o $(EXECUTAVEL)
 	rm -rf $(OBJETOS)
 
-webcrawler: http.h webcrawler.cpp
+webcrawler: lib_webcrawler.h webcrawler.cpp
 	$(CC) $(CPPFLAGS) -c webcrawler.cpp
 
-http: http.h http.cpp
+http: lib_webcrawler.h lib_webcrawler.cpp
 	$(CC) $(CPPFLAGS) -c http.cpp
 
 clean:
 	rm -rf $(EXECUTAVEL)
+	rm -rf male_webcrawler
 
 package:
 	@echo "Empacotando: "

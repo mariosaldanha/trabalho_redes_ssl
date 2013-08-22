@@ -1,5 +1,5 @@
-#ifndef HTTP_H_
-#define HTTP_H_
+#ifndef LIB_WEBCRAWLER_H_
+#define LIB_WEBCRAWLER_H_
 
 #include <iostream>
 #include <vector>
@@ -28,4 +28,4 @@
 
 using namespace std;
 
-#endif /* HTTP_H_ */
+#endif /* LIB_WEBCRAWLER_H_ */

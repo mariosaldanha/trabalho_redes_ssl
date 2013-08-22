@@ -4,7 +4,7 @@
  *
  * **/
 
-#include "http.h"
+#include "lib_webcrawler.h"
 
 std::vector<string> lista_urls;
 static std::vector<string> lista_urls_visitadas;
@@ -102,7 +102,7 @@ SSL_CTX *create_ctx(){
  
     OpenSSL_add_all_algorithms(); 
     //SSL_load_error_strings();   
-    method = (SSL_METHOD*)SSLv3_client_method();
+    method = (SSL_METHOD*)SSLv23_client_method();
     if (!(ctx = SSL_CTX_new(method)))
     {
         ERR_print_errors_fp(stderr);
@@ -158,10 +158,13 @@ string owner_ssl(){
         regex_split(back_inserter(issuer), line, e);
         
         boost::regex e("O=",
-				   boost::regbase::normal | boost::regbase::icase);  
+				   boost::regbase::normal | boost::regbase::icase);
+		boost::regex cn("CN=",
+				   boost::regbase::normal | boost::regbase::icase);
         
         string subjectO;
-        // Verifica nome do dono
+        // Verifica nome do dono 
+        // Procurando pela organização
         for(i = subject.begin(); i != subject.end(); ++i){
 			if(boost::regex_search(*i, e)){
 				subjectO = *i;
@@ -177,11 +180,33 @@ string owner_ssl(){
 				break;
 			}
 		}
+		
+		
+		// Se não tiver organização procura por CN
+		if(subjectO.empty() || issuerO.empty()){
+			//cout << "sem organização" << endl;
+			// Verifica nome do dono
+	        for(i = subject.begin(); i != subject.end(); ++i){
+				if(boost::regex_search(*i, cn)){
+					subjectO = *i;
+					break;
+				}
+			}
+			
+			// Verifica nome do emissor
+	        for(i = issuer.begin(); i != issuer.end(); ++i){
+				if(boost::regex_search(*i, cn)){
+					issuerO = *i;
+					break;
+				}
+			}
+		}
+		
 		//cout << "subjectCN: " << subjectCN << " issuerCN: " << issuerCN << endl;
 		// se for proprio dono
 		if(subjectO == issuerO){
 			//cout << issuerCN << " *" << endl;
-			return issuerO + " AUTO-ASSINADO"; 
+			return subjectO + " [AUTO-ASSINADO]"; 
 		}
 		else{
 			//cout << subjectCN << endl;
@@ -363,19 +388,19 @@ void create_dir(char *host, char *path){
 	int status;
 
 	// Pega o diretorio padrao do user
-	struct passwd *pw = getpwuid(getuid());
-	char *homedir = pw->pw_dir;
+	//struct passwd *pw = getpwuid(getuid());
+	//char *homedir = pw->pw_dir;
 
 	string diretorio;
 	string host_dir = host;
 	string path_dir = path;
 
 	// /home/user
-	diretorio += homedir;
+	//diretorio += homedir;
 	// /home/user/
 	struct stat fileStat;
 
-	diretorio += "/male_webcrawler/";
+	diretorio += "male_webcrawler/";
 	if (stat(diretorio.c_str(),&fileStat) < 0) {
 		if((status = mkdir(diretorio.c_str(), 0777)) < 0){
 			std::cerr << "Erro ao criar o diretorio " << diretorio << endl;
@@ -444,17 +469,13 @@ void create_dir(char *host, char *path){
 
 void FazTudo(string url, int depth) {
 
-	//std::cerr << "URL:" << url << std::endl;
-	//boost::regex expr("^(?:http://)?([^/]+)(?:/?.*/?)/(.*)$");
 	vector<string> str_split;
-	//cout << "url " << url << endl;
 	boost::split_regex(str_split, url,boost::regex("/"));
 	string domain;
 	string path = "/";
 	string file = str_split[str_split.size()-1];
 
 	// Identifica se é link absoluto
-
 	boost::regex absoluto("http|https");
 	
 	if((boost::regex_search(str_split[0], absoluto))){
@@ -463,7 +484,6 @@ void FazTudo(string url, int depth) {
 			//cout << "SECURE " << url  << endl;
 			https = true;
 			PORT = 443;
-			//cout << "secure" << endl;
 		}
 		else if(boost::regex_search(url, notsecure)){
 			https = false;
@@ -483,13 +503,6 @@ void FazTudo(string url, int depth) {
 		//domain = str_split[0];
 	}
 
-	//if (domain.find("www") != std::string::npos) {
-		//domain.replace(domain.begin(),domain.begin()+4,"");
-	//}
-
-	//std::cerr << "domain: " << domain << endl;
-	//std::cerr << "path: " << path << endl;
-	//std::cerr << "file: " << file << endl;
 	char * host_test = (char *)domain.c_str();
 	char * path_test = (char *)path.c_str();
 	std::string new_url;
@@ -497,11 +510,6 @@ void FazTudo(string url, int depth) {
 
 	int socket_desc;
 	struct sockaddr_in server;
-
-	//http:///wp-content/uploads/2013/03/intranet-corporativa-200x200.jpg
-	//digitaisdomarketing.com.br
-	//wp-content/uploads/2013/03/intranet-corporativa-200x200.jpg
-	//intranet-corporativa-200x200.jpg
 	create_dir(host_test, path_test);
 	socket_desc = create_socket();
 	//cout << domain << "   " << path << endl;
@@ -531,29 +539,29 @@ void FazTudo(string url, int depth) {
 		connect_ssl(ctx, &socket_desc);
 		
 		dono = owner_ssl();
-		
+		/**
 		boost::regex autoassinado("AUTO-ASSINADO",
 				   boost::regbase::normal | boost::regbase::icase);  
-		
+		**/
 		// Verifica o certificado
 	    if(SSL_get_verify_result(ssl) != X509_V_OK)
 	    {
 	        //fprintf(stderr, "Certificate verification error: %ld\n", SSL_get_verify_result(ssl));
-	        if(!(boost::regex_search(dono, autoassinado))){
-				SSL_free(ssl);
-				SSL_CTX_free(ctx);
+	        //if(!(boost::regex_search(dono, autoassinado))){
+				//SSL_free(ssl);
+				//SSL_CTX_free(ctx);
 				//exit(1);
-				return;
+				//return;
+			//}
+			//else{
+			if(first){
+				aux = url + "\n\t\t<" + dono + ">";
+				lista_urls_visitadas.push_back(url);
+				lista_urls_final.push_back(aux);
+				cout << aux << endl;
 			}
-			else{
-				if(first){
-					aux = url + "\t" + dono;
-					lista_urls_visitadas.push_back(url);
-					lista_urls_final.push_back(aux);
-					cout << aux << endl;
-				}
-				printf("Certificado inválido\n");
-			}
+			printf("\t\t\tCertificado não confiável\n");
+			//}
 	    }
 	}
 	else if(first){
@@ -575,10 +583,10 @@ void FazTudo(string url, int depth) {
 				existe = true;
 			}
 		}
-		if (!existe) {
+		if (!existe && depth >= 0) {
 			if(boost::regex_search(new_url, secure)){
 				//new_url = new_url + " " + owner_ssl();
-				aux = new_url + "\t" + dono;
+				aux = new_url + "\n\t\t<" + dono + ">";
 				//cout << "SECURE " << new_url  << endl;
 			}
 			else{
@@ -600,23 +608,17 @@ void FazTudo(string url, int depth) {
 			if (depth >= 0) {
 				FazTudo(new_url,depth-1);
 			}
-		} //else {
-			//std::cerr << " ... link existente" << endl;
-		//}
+		}
 	}
 	if(https){
 		// Termina conexão ssl
 		if(ssl != NULL){
-			//cout << "ssl free" << endl;
 			SSL_free(ssl);        	// ssl
 			ssl = NULL;
-			//cout << "ssl free apos" << endl;
 		}
 		if(ctx != NULL){
-			//cout << "ctx free" << endl;
 			SSL_CTX_free(ctx);      // contexto
 			ctx = NULL;
-			//cout << "ctx free apos" << endl;
 		}
 		
 	}
